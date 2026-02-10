@@ -4,7 +4,6 @@ import base64
 import os
 import uuid
 import random
-from streamlit_mic_recorder import mic_recorder  # เพิ่ม Library สำหรับรับเสียง
 
 # 1. ตั้งค่าหน้าเว็บ
 st.set_page_config(page_title="TPRS Magic Wheel V58", layout="wide")
@@ -15,7 +14,7 @@ if 'display_text' not in st.session_state:
 if 'audio_key' not in st.session_state:
     st.session_state.audio_key = 0
 
-# --- Grammar Logic ---
+# --- Grammar Logic (Past Simple & Perfect Tense) ---
 PAST_TO_INF = {
     "went": "go", "ate": "eat", "saw": "see", "bought": "buy", 
     "had": "have", "did": "do", "drank": "drink", "slept": "sleep", 
@@ -25,21 +24,20 @@ PAST_TO_INF = {
 }
 
 def is_present_perfect(predicate):
+    """ตรวจสอบว่าเป็นโครงสร้าง Have/Has/Had + V.3 หรือไม่"""
     words = predicate.lower().split()
-    if len(words) >= 2:
-        # เช็ค Have/Has/Had + Verb (ซึ่งมักจะลงท้าย ed หรือเป็น irregular)
-        return words[0] in ['have', 'has', 'had']
-    return False
+    return len(words) >= 2 and words[0] in ['have', 'has', 'had']
 
 def get_auxiliary(subject, predicate):
+    """หากริยาช่วยสำหรับประโยคคำถาม/ปฏิเสธ"""
     if is_present_perfect(predicate):
-        return None # ไม่ต้องใช้ Do/Does/Did
+        return None 
     
     words = predicate.split()
     if not words: return "Does"
     v_first = words[0].lower().strip()
     
-    # เงื่อนไข Past Simple (Irregular หรือลงท้าย ed)
+    # เงื่อนไข Past Simple: Irregular หรือลงท้าย ed
     if v_first in PAST_TO_INF or v_first.endswith("ed"):
         return "Did"
         
@@ -49,6 +47,7 @@ def get_auxiliary(subject, predicate):
     return "Does"
 
 def to_infinitive(predicate):
+    """ผันกริยากลับเป็นช่อง 1"""
     words = predicate.split()
     if not words: return ""
     v = words[0].lower().strip()
@@ -75,14 +74,15 @@ def has_be_verb(predicate):
     return v_low and v_low[0] in be_and_modals
 
 def build_logic(q_type, data):
+    """ฟังก์ชันสร้างประโยคตามประเภทคำถาม"""
     s1, p1, s2, p2 = data['s1'], data['p1'], data['s2'], data['p2']
     main_sent = data['main_sent']
     subj_real, pred_real = (s1 if s1 else "He"), (p1 if p1 else "is here")
     subj_trick = s2 if s2 != "-" else s1
     pred_trick = p2 if p2 != "-" else p1
 
-    # ฟังก์ชันช่วยสลับ Have/Has/Had หรือ Be verb
     def swap_verb_front(s, p):
+        """ย้าย Verb to be หรือ Verb to have ไปข้างหน้าประธาน"""
         parts = p.split()
         return f"{parts[0].capitalize()} {s} {' '.join(parts[1:])}".strip().replace("  ", " ")
 
@@ -144,52 +144,4 @@ def play_voice(text):
         except: pass
 
 # --- UI Layout ---
-st.title("🎡 TPRS Magic Wheel V58 (Tense Pro)")
-
-# ฟังก์ชันช่วยสร้างช่องกรอกพร้อมปุ่มอัดเสียง
-def input_with_mic(label, key, default):
-    col_text, col_mic = st.columns([0.85, 0.15])
-    with col_mic:
-        st.write("") # ปรับระดับให้ตรงกับ text_input
-        audio = mic_recorder(start_prompt="🎤", stop_prompt="🛑", key=f"mic_{key}")
-    
-    val = default
-    if audio and audio.get('transcription'):
-        val = audio['transcription']
-    
-    return col_text.text_input(label, value=val, key=f"input_{key}")
-
-main_input = input_with_mic("📝 Main Sentence", "main", "Tom has eaten an apple.")
-
-col1, col2 = st.columns(2)
-with col1:
-    s_r = input_with_mic("Subject (R):", "sr", "Tom")
-    p_r = input_with_mic("Predicate (R):", "pr", "has eaten an apple")
-with col2:
-    s_t = input_with_mic("Subject (T):", "st", "-")
-    p_t = input_with_mic("Predicate (T):", "pt", "has eaten a banana")
-
-data_packet = {'s1':s_r, 'p1':p_r, 's2':s_t, 'p2':p_t, 'main_sent':main_input}
-st.divider()
-
-clicked_type = None
-if st.button("🎰 RANDOM TRICK", use_container_width=True, type="primary"):
-    clicked_type = random.choice(["Statement", "Negative", "Yes-Q", "No-Q", "Either/Or", "Who", "What", "Where", "When", "How", "Why"])
-
-row1 = st.columns(5)
-btns = [("📢 Statement", "Statement"), ("🚫 Negative", "Negative"), ("✅ Yes-Q", "Yes-Q"), ("❌ No-Q", "No-Q"), ("⚖️ Either/Or", "Either/Or")]
-for i, (label, mode) in enumerate(btns):
-    if row1[i].button(label, use_container_width=True): clicked_type = mode
-
-row2 = st.columns(6)
-whs = ["Who", "What", "Where", "When", "How", "Why"]
-for i, wh in enumerate(whs):
-    if row2[i].button(f"❓ {wh}", use_container_width=True): clicked_type = wh
-
-if clicked_type:
-    final_text = build_logic(clicked_type, data_packet)
-    st.session_state.display_text = f"🎯 {clicked_type}: {final_text}"
-    play_voice(final_text)
-
-if st.session_state.display_text:
-    st.info(st.session_state.display_text)
+st.title("
