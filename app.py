@@ -6,7 +6,7 @@ import uuid
 import random
 
 # 1. ตั้งค่าหน้าเว็บ
-st.set_page_config(page_title="TPRS Magic Wheel V58.1", layout="wide")
+st.set_page_config(page_title="TPRS Magic Wheel V58.2", layout="wide")
 
 # 2. Session State
 if 'display_text' not in st.session_state:
@@ -14,7 +14,7 @@ if 'display_text' not in st.session_state:
 if 'audio_key' not in st.session_state:
     st.session_state.audio_key = 0
 
-# --- Grammar Logic (Past Simple & Perfect Tense) ---
+# --- Grammar Logic ---
 PAST_TO_INF = {
     "went": "go", "ate": "eat", "saw": "see", "bought": "buy", 
     "had": "have", "did": "do", "drank": "drink", "slept": "sleep", 
@@ -24,23 +24,30 @@ PAST_TO_INF = {
     "cut": "cut", "put": "put", "hit": "hit", "read": "read", "cost": "cost"
 }
 
+def is_present_perfect(predicate):
+    """เช็คว่าเป็น Perfect Tense (ต้องมี V3 ตามหลัง) หรือเป็น Have กริยาแท้"""
+    words = predicate.lower().split()
+    if len(words) >= 2 and words[0] in ['have', 'has', 'had']:
+        # ถ้าคำที่สองลงท้าย ed หรืออยู่ในลิสต์กริยาช่อง 2/3 (ในที่นี้อนุโลมใช้ PAST_TO_INF เช็คเบื้องต้น)
+        # หรือถ้ามีคำมากกว่า 2 คำและไม่ใช่ noun/adj ทั่วไป 
+        # แต่เพื่อความแม่นยำตามโจทย์: ถ้ามีแค่ have + noun จะถือว่าเป็นกริยาแท้
+        v2 = words[1]
+        if v2.endswith('ed') or v2 in PAST_TO_INF or v2 in ['been', 'done', 'gone', 'seen', 'eaten']:
+            return True
+    return False
+
 def is_past_form(predicate):
-    """เช็คว่ากริยาในช่องนั้นๆ เป็นรูปอดีตหรือไม่"""
     words = predicate.split()
     if not words: return False
     v = words[0].lower().strip()
     return v in PAST_TO_INF or v.endswith("ed")
 
-def is_present_perfect(predicate):
-    words = predicate.lower().split()
-    return len(words) >= 2 and words[0] in ['have', 'has', 'had']
-
 def get_auxiliary(subject, pred_target, pred_other):
-    """Cross-check ระหว่างสอง Predicate ถ้าตัวใดตัวหนึ่งเป็นอดีต ให้ใช้ Did"""
+    # ถ้าเป็น Perfect Tense (มี V3) ไม่ต้องใช้ Do/Does/Did
     if is_present_perfect(pred_target):
         return None 
     
-    # Logic: ถ้าช่องที่เรากำลังทำ หรือ ช่องตรงข้าม (R/T) เป็นอดีต ให้สรุปว่าเป็น Past Tense
+    # ถ้าเป็น Have/Has/Had ที่เป็นกริยาแท้ หรือกริยาอดีตอื่นๆ
     if is_past_form(pred_target) or is_past_form(pred_other):
         return "Did"
         
@@ -50,23 +57,22 @@ def get_auxiliary(subject, pred_target, pred_other):
     return "Does"
 
 def to_infinitive(predicate, other_predicate):
-    """ถ้าโดนตัดสินว่าเป็นอดีตจากการ Cross-check ให้พยายามผันกลับ"""
     words = predicate.split()
     if not words: return ""
     v = words[0].lower().strip()
     rest = " ".join(words[1:])
     
-    # ถ้าตัวมันเองหรือเพื่อนมันเป็น Past Tense
-    if is_past_form(predicate) or is_past_form(other_predicate):
-        if v in PAST_TO_INF: inf_v = PAST_TO_INF[v]
+    # ถ้าเป็น Have/Has/Had กริยาแท้ หรือกริยาอดีต
+    if is_past_form(predicate) or is_past_form(other_predicate) or v in ['has', 'have']:
+        if v in ['had', 'has', 'have']: inf_v = "have"
+        elif v in PAST_TO_INF: inf_v = PAST_TO_INF[v]
         elif v.endswith("ed"):
             if v.endswith("ied"): inf_v = v[:-3] + "y"
             else: inf_v = v[:-2]
-        else: inf_v = v # สำหรับพวก Zero Change เช่น cut -> cut
+        else: inf_v = v
     else:
-        # กรณี Present ปกติ (ตัด s/es)
-        if v in ["has"]: inf_v = "have"
-        elif v.endswith("es"):
+        # กรณี Present ทั่วไป
+        if v.endswith("es"):
             for suffix in ['sses', 'ches', 'shes', 'xes']:
                 if v.endswith(suffix): 
                     inf_v = v[:-2]
@@ -98,7 +104,7 @@ def build_logic(q_type, data):
         if has_be_verb(pred_trick) or is_present_perfect(pred_trick):
             parts = pred_trick.split()
             return f"No, {subj_trick} {parts[0]} not {' '.join(parts[1:])}."
-        aux = get_auxiliary(subj_trick, pred_trick, pred_real) # ส่ง p_real ไปเช็คด้วย
+        aux = get_auxiliary(subj_trick, pred_trick, pred_real)
         return f"No, {subj_trick} {aux.lower()} not {to_infinitive(pred_trick, pred_real)}."
 
     if q_type == "Yes-Q":
@@ -150,16 +156,16 @@ def play_voice(text):
         except: pass
 
 # --- UI Layout ---
-st.title("🎡 TPRS Magic Wheel V58.1")
+st.title("🎡 TPRS Magic Wheel V58.2")
 
-main_input = st.text_input("📝 Main Sentence", "He cut the cake yesterday.")
+main_input = st.text_input("📝 Main Sentence", "He has a car.")
 col1, col2 = st.columns(2)
 with col1:
     s_r = st.text_input("Subject (R):", "He")
-    p_r = st.text_input("Predicate (R):", "cut the cake")
+    p_r = st.text_input("Predicate (R):", "has a car")
 with col2:
     s_t = st.text_input("Subject (T):", "-")
-    p_t = st.text_input("Predicate (T):", "ate the bread") # ate เป็นอดีต จะทำให้ cut ใน R กลายเป็นอดีตไปด้วย
+    p_t = st.text_input("Predicate (T):", "has a bike")
 
 data_packet = {'s1':s_r, 'p1':p_r, 's2':s_t, 'p2':p_t, 'main_sent':main_input}
 st.divider()
