@@ -140,31 +140,4 @@ def build_logic(q_type, data):
             return f"{q_type} {words[0]} {subj_r} {' '.join(words[1:])}?"
         if words[0] in ['have', 'has', 'had'] and not is_present_perfect(pred_r):
             aux = get_auxiliary(subj_r, pred_r, pred_t)
-            return f"{q_type} {aux.lower()} {subj_r} {to_infinitive(pred_r, pred_t)}?"
-        if has_be_verb(pred_r) or is_present_perfect(pred_r):
-            return f"{q_type} {pred_r.split()[0]} {subj_r} {' '.join(pred_r.split()[1:])}?"
-        aux = get_auxiliary(subj_r, pred_r, pred_t)
-        return f"{q_type} {aux.lower()} {subj_r} {to_infinitive(pred_r, pred_t)}?"
-
-    if q_type == "Either/Or":
-        if s2 != "-" and s1.lower().strip() != s2.lower().strip():
-            if has_be_verb(pred_r):
-                return f"{pred_r.split()[0].capitalize()} {subj_r} or {subj_t} {' '.join(pred_r.split()[1:])}?"
-            return f"{get_auxiliary(subj_r, pred_r, pred_t)} {subj_r} or {subj_t} {to_infinitive(pred_r, pred_t)}?"
-        else:
-            p_alt = p2 if p2 != "-" else "something else"
-            if has_be_verb(pred_r):
-                return f"{swap(subj_r, pred_r)} or {p_alt}?"
-            return f"{get_auxiliary(subj_r, pred_r, p_alt)} {subj_r} {to_infinitive(pred_r, p_alt)} or {to_infinitive(p_alt, pred_r)}?"
-    return data['main_sent']
-
-def play_voice(text):
-    if not text: return
-    try:
-        clean = text.split(":")[-1].strip().replace("🎯","")
-        tts = gTTS(text=clean, lang='en')
-        fn = f"v_{uuid.uuid4()}.mp3"
-        tts.save(fn)
-        with open(fn, "rb") as f: b64 = base64.b64encode(f.read()).decode()
-        st.session_state.audio_key += 1
-        st.markdown(f'<audio autoplay key="{st.session_state.audio_key}"><source src="data:audio/mp3;base64,{b64}" type="audio/
+            return f"{
