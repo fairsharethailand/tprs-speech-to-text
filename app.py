@@ -7,7 +7,7 @@ import random
 import json
 
 # 1. ตั้งค่าหน้าเว็บ
-st.set_page_config(page_title="Speak V1.0", layout="wide")
+st.set_page_config(page_title="Speak V1.3", layout="wide")
 
 # --- UI Helper Functions (Callback) ---
 # ฟังก์ชันนี้จะทำงานทันทีที่กดปุ่ม "ก่อน" ที่หน้าเว็บจะโหลดใหม่ ทำให้ไม่เกิด Error
@@ -168,7 +168,7 @@ def play_voice(text):
     except: pass
 
 # --- UI Layout ---
-st.title("🎡 Speak V1.0")
+st.title("🎡 Speak V1.3")
 
 # 1. Main Sentence Row
 m_col1, m_col2 = st.columns([0.92, 0.08])
