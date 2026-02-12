@@ -79,18 +79,32 @@ def conjugate_singular(predicate):
 
 def get_auxiliary(subject, pred_target, pred_other):
     if is_present_perfect(pred_target): return None 
+    
+    # 1. เช็ค Past Tense ก่อน (ถ้ามีตัวใดตัวหนึ่งเป็น Past ให้ใช้ Did)
     if check_tense_type(pred_target) == "past" or check_tense_type(pred_other) == "past":
         return "Did"
     
+    # --- จัดการ Present Tense (Do/Does) ---
     s_clean = subject.lower().strip()
+    s_words = s_clean.split()
     
-    # 1. กลุ่มยกเว้น และสรรพนามพหูพจน์
-    if s_clean in ['i', 'you', 'we', 'they']:
-        return "Do"
+    # 2. กรณีใช้ "Do" (พหูพจน์ และข้อยกเว้น I, You)
+    # - เป็น I, You, We, They
+    # - มีคำว่า 'and' (ประธานพหูพจน์)
+    # - เป็นคำนามพหูพจน์ผิดรูป (IRR_PL เช่น children, people)
+    # - ลงท้ายด้วย 's' (และไม่ใช่ชื่อเฉพาะ)
+    is_plural = (
+        s_clean in ['i', 'you', 'we', 'they'] or 
+        ' and ' in s_clean or 
+        any(word in IRR_PL for word in s_words) or 
+        (s_clean.endswith('s') and s_clean not in ['james', 'charles', 'boss', 'class', 'bus'])
+    )
     
-    # 2. เช็คคำนามพหูพจน์ผิดรูป (เช่น children, people)
-    if any(word in IRR_PL for word in s_clean.split()):
+    if is_plural:
         return "Do"
+        
+    # 3. กรณีใช้ "Does" (เอกพจน์/บุรุษที่ 3)
+    return "Does"
     
     # 3. เช็คประธานพหูพจน์ที่มี 'and' หรือลงท้ายด้วย 's' (ยกเว้นชื่อเฉพาะ)
     if ' and ' in s_clean or (s_clean.endswith('s') and s_clean not in ['james', 'charles', 'boss', 'class', 'bus']):
