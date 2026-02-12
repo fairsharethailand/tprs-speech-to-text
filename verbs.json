@@ -23,5 +23,6 @@
   "put": "put",
   "hit": "hit",
   "read": "read",
+  "built": "build",
   "cost": "cost"
 }
