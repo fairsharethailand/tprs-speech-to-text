@@ -42,7 +42,7 @@ def load_irregular_verbs():
                 "had": "have", "did": "do", "drank": "drink", "slept": "sleep", 
                 "wrote": "write", "came": "come", "ran": "run", "met": "meet",
                 "spoke": "speak", "took": "take", "found": "find", "gave": "give",
-                "thought": "think", "brought": "bring", "told": "tell", "made": "make"
+                "thought": "think", "brought": "bring", "built": "ิbuild", "told": "tell", "made": "make"
             }
     except Exception:
         return {"went": "go", "ate": "eat"}
