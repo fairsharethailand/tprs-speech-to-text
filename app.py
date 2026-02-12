@@ -16,7 +16,6 @@ if 'audio_key' not in st.session_state:
     st.session_state.audio_key = 0
 
 # --- Grammar Logic (คงเดิมทั้งหมด) ---
-
 def load_irregular_verbs():
     try:
         if os.path.exists('verbs.json'):
@@ -154,7 +153,8 @@ def play_voice(text):
     except: pass
 
 # --- UI Helper ---
-def clear_text(key):
+def clear_field(key):
+    """ฟังก์ชัน Callback สำหรับล้างค่าในช่องกรอกข้อมูล"""
     st.session_state[key] = ""
 
 # --- UI Layout ---
@@ -163,12 +163,15 @@ st.title("🎡 Speak V1.0")
 # 1. Main Sentence Row
 m_col1, m_col2 = st.columns([0.92, 0.08])
 with m_col1:
-    m_in = st.text_input("📝 Main Sentence", value="The children make a cake.", key="m_input")
+    m_in = st.text_input("📝 Main Sentence", key="m_input")
+    # ตั้งค่า Default ครั้งแรกถ้า session_state ว่าง
+    if "m_input" not in st.session_state or st.session_state.m_input == "":
+         if "initialized" not in st.session_state:
+             st.session_state.m_input = "The children make a cake."
+
 with m_col2:
-    st.markdown("<br>", unsafe_allow_html=True) # ปรับระยะปุ่มให้ตรงกับ Input
-    if st.button("🗑️", key="btn_m"):
-        clear_text("m_input")
-        st.rerun()
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.button("🗑️", key="btn_m", on_click=clear_field, args=("m_input",))
 
 c1, c2 = st.columns(2)
 
@@ -176,12 +179,71 @@ with c1:
     # Subject (R)
     sr_col1, sr_col2 = st.columns([0.85, 0.15])
     with sr_col1:
-        sr = st.text_input("Subject (R):", value="The children", key="sr_input")
+        sr = st.text_input("Subject (R):", key="sr_input")
+        if "sr_input" not in st.session_state or st.session_state.sr_input == "":
+            if "initialized" not in st.session_state: st.session_state.sr_input = "The children"
     with sr_col2:
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("🗑️", key="btn_sr"):
-            clear_text("sr_input")
-            st.rerun()
+        st.button("🗑️", key="btn_sr", on_click=clear_field, args=("sr_input",))
 
     # Predicate (R)
-    pr_col1, pr_col2 = st.
+    pr_col1, pr_col2 = st.columns([0.85, 0.15])
+    with pr_col1:
+        pr = st.text_input("Predicate (R):", key="pr_input")
+        if "pr_input" not in st.session_state or st.session_state.pr_input == "":
+            if "initialized" not in st.session_state: st.session_state.pr_input = "make a cake"
+    with pr_col2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.button("🗑️", key="btn_pr", on_click=clear_field, args=("pr_input",))
+
+with c2:
+    # Subject (T)
+    st_col1, st_col2 = st.columns([0.85, 0.15])
+    with st_col1:
+        st_subj = st.text_input("Subject (T):", key="st_input")
+        if "st_input" not in st.session_state or st.session_state.st_input == "":
+            if "initialized" not in st.session_state: st.session_state.st_input = "-"
+    with st_col2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.button("🗑️", key="btn_st", on_click=clear_field, args=("st_input",))
+
+    # Predicate (T)
+    pt_col1, pt_col2 = st.columns([0.85, 0.15])
+    with pt_col1:
+        pt = st.text_input("Predicate (T):", key="pt_input")
+        if "pt_input" not in st.session_state or st.session_state.pt_input == "":
+            if "initialized" not in st.session_state: st.session_state.pt_input = "make a bread"
+    with pt_col2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.button("🗑️", key="btn_pt", on_click=clear_field, args=("pt_input",))
+
+# ป้องกันการทับค่าหลังจาก Init ครั้งแรก
+st.session_state.initialized = True
+
+# จัดเตรียม Data
+data = {'s1': sr, 'p1': pr, 's2': st_subj, 'p2': pt, 'main_sent': m_in}
+
+st.divider()
+
+# --- Buttons System ---
+clicked = None
+if st.button("🎰 RANDOM TRICK", use_container_width=True, type="primary"):
+    clicked = random.choice(["Statement", "Yes-Q", "No-Q", "Negative", "Either/Or", "Who", "What", "Where", "When", "How", "Why"])
+
+r1 = st.columns(5)
+btns1 = [("📢 Statement", "Statement"), ("✅ Yes-Q", "Yes-Q"), ("❌ No-Q", "No-Q"), ("🚫 Negative", "Negative"), ("⚖️ Either/Or", "Either/Or")]
+for i, (l, m) in enumerate(btns1):
+    if r1[i].button(l, use_container_width=True): clicked = m
+
+r2 = st.columns(6)
+for i, wh in enumerate(["Who", "What", "Where", "When", "How", "Why"]):
+    if r2[i].button(f"❓ {wh}", use_container_width=True): clicked = wh
+
+# --- Execution ---
+if clicked:
+    res = build_logic(clicked, data)
+    st.session_state.display_text = f"🎯 {clicked}: {res}"
+    play_voice(res)
+
+if st.session_state.display_text: 
+    st.info(st.session_state.display_text)
