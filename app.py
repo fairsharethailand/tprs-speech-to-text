@@ -181,10 +181,50 @@ def play_voice(text):
 
 # --- UI ---
 st.title("🎡 Speak V1.0")
-m_in = st.text_input("📝 Main Sentence", "The children are making a cake.")
+
+# ฟังก์ชันสำหรับรีเซ็ตค่า
+def clear_field(key):
+    st.session_state[key] = ""
+
+# ส่วน Main Sentence
+col_m1, col_m2 = st.columns([0.9, 0.1], vertical_alignment="bottom")
+m_in = col_m1.text_input("📝 Main Sentence", value="The children make a cake.", key="main_input")
+if col_m2.button("🗑️", key="clr_main"):
+    clear_field("main_input")
+    st.rerun()
+
 c1, c2 = st.columns(2)
-with c1: sr, pr = st.text_input("Subject (R):", "The children"), st.text_input("Predicate (R):", "are making a cake")
-with c2: st_subj, pt = st.text_input("Subject (T):", "-"), st.text_input("Predicate (T):", "are making a bread")
+
+with c1:
+    # Subject (R)
+    col_sr1, col_sr2 = st.columns([0.85, 0.15], vertical_alignment="bottom")
+    sr = col_sr1.text_input("Subject (R):", value="The children", key="sr_input")
+    if col_sr2.button("🗑️", key="clr_sr"):
+        clear_field("sr_input")
+        st.rerun()
+    
+    # Predicate (R)
+    col_pr1, col_pr2 = st.columns([0.85, 0.15], vertical_alignment="bottom")
+    pr = col_pr1.text_input("Predicate (R):", value="make a cake", key="pr_input")
+    if col_pr2.button("🗑️", key="clr_pr"):
+        clear_field("pr_input")
+        st.rerun()
+
+with c2:
+    # Subject (T)
+    col_st1, col_st2 = st.columns([0.85, 0.15], vertical_alignment="bottom")
+    st_subj = col_st1.text_input("Subject (T):", value="-", key="st_input")
+    if col_st2.button("🗑️", key="clr_st"):
+        clear_field("st_input")
+        st.rerun()
+    
+    # Predicate (T)
+    col_pt1, col_pt2 = st.columns([0.85, 0.15], vertical_alignment="bottom")
+    pt = col_pt1.text_input("Predicate (T):", value="make a bread", key="pt_input")
+    if col_pt2.button("🗑️", key="clr_pt"):
+        clear_field("pt_input")
+        st.rerun()
+
 data = {'s1':sr, 'p1':pr, 's2':st_subj, 'p2':pt, 'main_sent':m_in}
 
 st.divider()
